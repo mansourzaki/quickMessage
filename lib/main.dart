@@ -1,5 +1,9 @@
-import 'package:easy_message/widgets/formBox.dart';
+import 'package:easy_message/provider/bottom_navigationbar_provider.dart';
+import 'package:easy_message/screens/call_log.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'screens/main_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,18 +16,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Easy Message',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Direct Message'),
+      home: ChangeNotifierProvider(
+          create: (context) => BottomNavigationBarProvider(),
+          child: const MyHomePage(title: 'Direct Message')),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
-
   final String title;
 
   @override
@@ -31,46 +36,42 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  GlobalKey bottomNavigationBarKey = GlobalKey();
+  final List<Widget> _pages = const <Widget>[MainPage(), CallLogPage()];
+
   @override
   Widget build(BuildContext context) {
+    final prov = Provider.of<BottomNavigationBarProvider>(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.grey[700],
         title: Text(widget.title),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: MediaQuery.of(context).size.width,
-                minHeight: MediaQuery.of(context).size.height * 0.45,
-              ),
-              child: Container(
-                color: Colors.green[200],
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.sms,
-                        size: 100,
-                      ),
-                      Text(
-                        'Send whatsapp message without saving number',
-                        style: TextStyle(
-                          fontSize: 24,
-                        ),
-                        textAlign: TextAlign.center,
-                      )
-                    ]),
-              ),
-            ),
-            const FormBox()
-          ],
-        ),
+      body: IndexedStack(children: _pages, index: prov.selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Colors.green,
+        key: bottomNavigationBarKey,
+        currentIndex: prov.selectedIndex,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Call Log')
+        ],
+        onTap: (index) async {
+          // if (index == 1) {
+          //   PermissionStatus status = await Permission.phone.status;
+          //   if (!status.isGranted) {
+          //     print(status);
+          //     await Permission.phone.request();
+              
+          //   }
+          //   if (status.isGranted) {
+          //     prov.changeIndex(index);
+          //   }
+          // } else {
+            prov.changeIndex(index);
+         // }
+        },
       ),
-     
     );
   }
 }

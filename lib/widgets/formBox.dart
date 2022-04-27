@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 
+import '../provider/bottom_navigationbar_provider.dart';
+
 class FormBox extends StatefulWidget {
   const FormBox({Key? key}) : super(key: key);
-
   @override
   State<FormBox> createState() => _FormBoxState();
 }
 
 class _FormBoxState extends State<FormBox> {
-  final formKey = GlobalKey<FormState>();
   final countryCodeController = TextEditingController();
   final phoneNumberController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
+    phoneNumberController.text =
+        context.watch<BottomNavigationBarProvider>().phone;
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Form(
@@ -24,10 +30,19 @@ class _FormBoxState extends State<FormBox> {
           children: [
             Row(
               children: [
-                buildTextFormField(countryCodeController, '970', 3,
-                    flex: 1, prefixText: '+'),
-                buildTextFormField(phoneNumberController, '0567892568', 15,
-                    flex: 3),
+                // buildTextFormField(countryCodeController, '1', 3,
+                //     flex: 1, prefixText: '+'),
+                buildTextFormField(
+                    phoneNumberController, 'Enter Number Here', 15, flex: 3,
+                    validator: (input) {
+                  if (input != null) {
+                    if (input.startsWith('00')) {
+                      return 'Remove a zero or replace 00 with +';
+                    } else {
+                      return null;
+                    }
+                  }
+                }),
               ],
             ),
             SizedBox(
@@ -35,9 +50,10 @@ class _FormBoxState extends State<FormBox> {
             ),
             ElevatedButton(
               onPressed: () async {
-                await _launchWhatsapp(
-                    countryCodeController.text + phoneNumberController.text);
-                print(countryCodeController.text + phoneNumberController.text);
+                if (formKey.currentState!.validate()) {
+                  await launchWhatsapp(
+                      countryCodeController.text + phoneNumberController.text);
+                }
               },
               child: RichText(
                 text: const TextSpan(
@@ -57,41 +73,21 @@ class _FormBoxState extends State<FormBox> {
     );
   }
 
-  _launchWhatsapp(String phone) async {
-   // final url = Uri.parse('https://api.WhatsApp.com/send?phone=$phone');
-   // print(url);
-   final url = Uri.parse('whatsapp://send/?phone=$phone');
+  launchWhatsapp(String phone) async {
+    // final url = Uri.parse('https://api.WhatsApp.com/send?phone=$phone');
+    // print(url);
+    final url = Uri.parse('whatsapp://send/?phone=$phone');
 
     if (await canLaunchUrl(url)) {
-      await launchUrl(url).catchError((error) {
-       
-      });
+      await launchUrl(url).catchError((error) {});
     }
-    // showDialog(
-    //     context: context,
-    //     builder: (BuildContext context) {
-    //       return const AlertDialog(
-    //         title: Text('An Error Occured'),
-    //         content: Text(''),
-    //       );
-    //     });
-
-    // if (await canLaunchUrl(url)) {
-    //   await launchUrl(url);
-    // } else {
-    //   showDialog(
-    //       context: context,
-    //       builder: (BuildContext context) {
-    //         return const AlertDialog(
-    //           title: Text('An Error Occured'),
-    //         );
-    //       });
-    // }
   }
 
   Widget buildTextFormField(
       TextEditingController controller, String hintText, int maxLength,
-      {int flex = 0, String? prefixText}) {
+      {int flex = 0,
+      String? prefixText,
+      String? Function(String?)? validator}) {
     return Flexible(
       flex: flex,
       child: Padding(
@@ -99,7 +95,8 @@ class _FormBoxState extends State<FormBox> {
         child: TextFormField(
           controller: controller,
           textAlign: TextAlign.left,
-          inputFormatters: [LengthLimitingTextInputFormatter(maxLength)],
+          validator: validator,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(hintText: hintText, prefixText: prefixText
               // prefixIcon: Padding(

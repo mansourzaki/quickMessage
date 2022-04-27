@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   call_log: ^3.2.2
   url_launcher: ^6.1.0
+  time_elapsed: ^0.2.6
+  provider: ^6.0.2
+  permission_handler: ^9.2.0
 
 dev_dependencies:
   flutter_test:
