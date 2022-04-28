@@ -57,19 +57,23 @@ class _MyHomePageState extends State<MyHomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Call Log')
         ],
         onTap: (index) async {
-          // if (index == 1) {
-          //   PermissionStatus status = await Permission.phone.status;
-          //   if (!status.isGranted) {
-          //     print(status);
-          //     await Permission.phone.request();
-              
-          //   }
-          //   if (status.isGranted) {
-          //     prov.changeIndex(index);
-          //   }
-          // } else {
+          if (index == 1) {
+            setState(() {});
+          }
+          if (index == 1) {
+            PermissionStatus status = await Permission.phone.status;
+            if (!status.isGranted) {
+              print(status);
+              await Permission.phone.request();
+              prov.changeIndex(index);
+            }
+
+            if (status.isGranted) {
+              prov.changeIndex(index);
+            }
+          } else {
             prov.changeIndex(index);
-         // }
+          }
         },
       ),
     );

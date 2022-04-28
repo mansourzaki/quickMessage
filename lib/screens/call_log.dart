@@ -1,5 +1,4 @@
 import 'package:call_log/call_log.dart';
-
 import 'package:easy_message/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -16,12 +15,18 @@ class CallLogPage extends StatefulWidget {
 }
 
 class _CallLogPageState extends State<CallLogPage> {
-  late PermissionStatus status;
+  String message = '';
+  Future<Iterable<CallLogEntry>> getLogs() async {
+    final status = await Permission.phone.status;
 
-  @override
-  void initState() {
-    Permission.phone.status.then((value) => status = value);
-    super.initState();
+    if (!status.isGranted) {
+      message = '1';
+      return [];
+    } else {
+      message = '0';
+    }
+    final logs = await CallLog.get();
+    return logs;
   }
 
   @override
@@ -34,63 +39,96 @@ class _CallLogPageState extends State<CallLogPage> {
     }
 
     return FutureBuilder<Iterable<CallLogEntry>>(
-        future: CallLog.get(),
+        future: getLogs(),
         builder: ((context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (status.isDenied) {
-            Permission.phone.request();
-            return Text('Grant permission to call logs');
-          } else if (snapshot.hasError) {
             return const Center(
-              child: Text('An Error Occured'),
+              child: CircularProgressIndicator(),
+            );
+          }
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text('An error occured'),
             );
           } else if (snapshot.data == null) {
-            return const Center(
-              child: Text('No Recent Calls'),
+            return Center(
+              child: Text(message),
             );
           } else {
             List<CallLogEntry> data = snapshot.data!.toList();
-            return ListView.separated(
-                separatorBuilder: ((context, i) => const Divider()),
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, i) {
-                  return ListTile(
-                    title: Text(data[i].number!),
-                    subtitle: Text(
-                      data[i].name! +
-                          ' - ' +
-                          TimeElapsed.fromDateTime(
-                              DateTime.fromMillisecondsSinceEpoch(
-                                  data[i].timestamp!)) +
-                          ' ago',
-                    ),
-                    leading: Text(
-                      '${i + 1}',
-                      style: const TextStyle(fontSize: 18, height: 1.8),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        IconButton(
-                            onPressed: () {
-                              editOnMainPage(data[i].number!);
+            return message == '1'
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text('Give permission from app settings'),
+                        ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                primary: Colors.green[300]),
+                            onPressed: () async {
+                              setState(() {
+                                openAppSettings();
+                              });
                             },
-                            icon: const Icon(Icons.edit)),
-                        IconButton(
-                            onPressed: () {
-                              launchWhatsapp(data[i].number!);
+                            child: const Text('Open App Settings')),
+                        ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                primary: Colors.green[300]),
+                            onPressed: () async {
+                              setState(() {});
                             },
-                            icon: const Icon(
-                              Icons.whatsapp,
-                              color: Colors.green,
-                              size: 28,
-                            )),
+                            child: const Text('Refresh')),
                       ],
                     ),
-                  );
-                });
+                  )
+                : data.isEmpty
+                    ? Center(
+                        child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {});
+                            },
+                            child: const Text('No Recent Calls')),
+                      )
+                    : ListView.separated(
+                        separatorBuilder: ((context, i) => const Divider()),
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, i) {
+                          return ListTile(
+                            title: Text(data[i].number!),
+                            subtitle: Text(
+                              data[i].name! +
+                                  ' - ' +
+                                  TimeElapsed.fromDateTime(
+                                      DateTime.fromMillisecondsSinceEpoch(
+                                          data[i].timestamp!)) +
+                                  ' ago',
+                            ),
+                            leading: Text(
+                              '${i + 1}',
+                              style: const TextStyle(fontSize: 18, height: 1.8),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                IconButton(
+                                    onPressed: () {
+                                      editOnMainPage(data[i].number!);
+                                    },
+                                    icon: const Icon(Icons.edit)),
+                                IconButton(
+                                    onPressed: () {
+                                      launchWhatsapp(data[i].number!);
+                                    },
+                                    icon: const Icon(
+                                      Icons.whatsapp,
+                                      color: Colors.green,
+                                      size: 28,
+                                    )),
+                              ],
+                            ),
+                          );
+                        });
           }
         }));
   }
