@@ -16,13 +16,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Easy Message',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: ChangeNotifierProvider(
           create: (context) => BottomNavigationBarProvider(),
-          child: const MyHomePage(title: 'Direct Message')),
+          child: const MyHomePage(title: 'Quick Message')),
     );
   }
 }
@@ -63,7 +64,6 @@ class _MyHomePageState extends State<MyHomePage> {
           if (index == 1) {
             PermissionStatus status = await Permission.phone.status;
             if (!status.isGranted) {
-              print(status);
               await Permission.phone.request();
               prov.changeIndex(index);
             }

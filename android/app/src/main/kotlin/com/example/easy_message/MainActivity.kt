@@ -1,4 +1,4 @@
-package com.example.easy_message
+package com.mans.quickMessage
 
 import io.flutter.embedding.android.FlutterActivity
 
